@@ -54,11 +54,12 @@
 		box-shadow: black 0 0 3px;
 		border-radius: 1rem;
 		overflow: hidden;
+		transition: all 0.1s ease-out;
 	}
 
 	.journal:hover {
 		box-shadow: rgba(0, 0, 0, 0.75) 0 0 1rem;
-		transition: box-shadow 0.1s ease-out;
+		scale: 1.1;
 	}
 
 	.label {

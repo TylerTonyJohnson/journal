@@ -262,15 +262,14 @@
 		);
 		resize: none;
 		outline: none;
+		border: none;
+		line-height: 1rem;
 		/* inset: 0; */
 		flex: 1;
 		background-color: transparent;
-		outline: none;
-		border: none;
 		padding: 0.2rem 4rem 0rem 4rem;
 		/* inset: 3rem; */
 		font-family: inherit;
 		color: inherit;
-		line-height: 1rem;
 	}
 </style>

@@ -24,9 +24,12 @@
 
 	.journal-card-container {
 		display: grid;
+		justify-content: center;
+		align-items: center;
+		margin-inline: auto;
 		grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
 		gap: 1rem;
-		width: 100%;
+		/* width: 100%; */
 		padding: 1rem;
 	}
 </style>

@@ -2,11 +2,13 @@
 	import { username } from '$lib/stores.js';
 	import { supabase } from '$lib/supabaseClient';
 	import { onMount } from 'svelte';
-	import JournalLegal from './JournalLegal.svelte';
-	import Shelf from './Shelf.svelte';
+
 	import { DeskStates } from '$lib/enums.js';
+	import JournalLegal from './Journals/JournalLegal.svelte';
+	import Shelf from './Shelf.svelte';
 	import DisplayLegal from './Journals/DisplayLegal.svelte';
 	import Stack from './Stack.svelte';
+	import Journal from './Journals/Journal.svelte';
 
 	let journalData = [];
 	let deskState = DeskStates.Viewing;
@@ -14,6 +16,8 @@
 	let journalName = '';
 
 	let currentJournal;
+
+	let downloadElement;
 
 	let currentJournalType;
 
@@ -122,7 +126,6 @@
 		</div>
 	</div>
 
-	<!-- Shelf -->
 	{#if deskState === DeskStates.Viewing}
 		<div>Looking at current journals</div>
 		<Stack {journalData} on:newJournal={newJournal} on:editMode={editMode} />
@@ -139,14 +142,18 @@
 		<div>Editing our journal</div>
 		<JournalLegal />
 	{/if}
+	<div class='journal-frame' bind:this={downloadElement}>
+		<Journal type={'bullet'} name={'Strange'} isEditing={true}/>
+	</div>
 </div>
 
 <style>
 	.frame {
-		position: fixed;
+		/* position: fixed; */
 		/* height: 100vh; */
-		width: 100vw;
+		/* width: 100vw; */
 		background-color: lavender;
+		/* padding: 1rem; */
 	}
 
 	.banner {
@@ -161,5 +168,12 @@
 	.name {
 		color: tan;
 		font-size: 2rem;
+	}
+
+	.journal-frame {
+		width: 34rem;
+		height: 44rem;
+		margin: 1rem auto;
+		/* border: solid red 1px; */
 	}
 </style>

@@ -28,6 +28,7 @@
 		"@supabase/auth-ui-shared": "^0.1.8",
 		"@supabase/auth-ui-svelte": "^0.2.9",
 		"@supabase/supabase-js": "^2.39.6",
-		"@sveltejs/adapter-vercel": "^5.1.0"
+		"@sveltejs/adapter-vercel": "^5.1.0",
+		"html2pdf.js": "^0.10.1"
 	}
 }
