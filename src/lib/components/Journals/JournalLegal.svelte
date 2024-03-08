@@ -2,106 +2,11 @@
 	-------------------- FUNCTIONALITY -------------------- 
  -->
 
- <script>
-	import { supabase } from '$lib/supabaseClient.js';
-	import { onMount } from 'svelte';
+<script>
+	import PageLegal from './PageLegal.svelte';
 
-	import { username } from '$lib/stores.js';
-
-	export let entryData;
-
-	let currentEntry = {};
-
-	let entryText;
-	let entryTitle;
-	let entryDateData;
-	let entryIdData;
-	$: entryDate = entryDateData.toLocaleDateString();
-	resetText();
-
-	async function saveJournalEntry() {
-		console.log('saving');
-
-		// Either create new entry or update if already exists
-		const updateObject = {
-			title: entryTitle,
-			entry: entryText,
-			username: $username
-		};
-		if (entryIdData) updateObject.id = entryIdData;
-
-		const { data, error } = await supabase.from('entries').upsert([updateObject]).select();
-		if (error) {
-			console.log('ERROR SAVING');
-		}
-		resetText();
-	}
-
-	async function openJournalEntry(entryId) {
-		const { data, error } = await supabase.from('entries').select('*').eq('id', entryId);
-		if (error) {
-			console.log('Error fetching data');
-		} else {
-			console.log('Opened', entryId);
-		}
-		// Hard-coded index, could be cleaner
-		entryIdData = data[0].id;
-		entryText = data[0].entry;
-		entryTitle = data[0].title;
-		entryDateData = new Date(data[0].created_at);
-	}
-
-	async function deleteJournalEntry(entryId) {
-		if (!entryId) return;
-		console.log('deleting');
-		const { error } = await supabase.from('entries').delete().match({ id: entryId });
-	}
-
-	const logout = () => {
-		$username = null;
-	};
-
-	onMount(() => {
-		// Get supabase data
-		console.log(entryData);
-
-		// Supabase subscription
-		const subscription = supabase
-			.channel('entry_channel')
-			.on(
-				'postgres_changes',
-				{
-					event: '*',
-					schema: 'public',
-					table: 'entries'
-				},
-				(payload) => {
-					switch (payload.eventType) {
-						case 'INSERT':
-							console.log('new', payload.new);
-							entryData.entries = [...entryData.entries, payload.new];
-							break;
-						case 'DELETE':
-							console.log('old', payload.old);
-							entryData.entries = entryData.entries.filter((entryData) => entryData.id !== payload.old.id);
-							break;
-						case 'UPDATE':
-							console.log('old', payload.old);
-							entryData.entries = [...entryData.entries];
-							break;
-					}
-					entryText = '';
-				}
-			)
-			.subscribe();
-	});
-
-	function resetText() {
-		entryIdData = null;
-		entryText = '';
-		entryTitle = '';
-		entryDateData = new Date();
-	}
+	export let name;
+	export let isEditing;
 </script>
 
 <!-- 
@@ -109,28 +14,15 @@
  -->
 
 <div class="frame">
-	<div class="journal">
-		<div class="binding">
-			<div class="logo"><span> {$username}'s </span> <span> Journal </span></div>
+	<PageLegal {isEditing}/>
+	{#if !isEditing}
+		<div class="cover">
+			<div class="binding"></div>
+			<PageLegal {isEditing} />
 		</div>
-		<div class="paper">
-			<div class="header">
-				<input
-					class="title"
-					type="text"
-					maxlength="20"
-					bind:value={entryTitle}
-					placeholder="Title here"
-				/>
-				<input class="date" type="text" bind:value={entryDate} />
-			</div>
-			<textarea
-				class="text-box"
-				bind:value={entryText}
-				placeholder="Write your journal entry here..."
-			></textarea>
-		</div>
-	</div>
+	{/if}
+
+	
 </div>
 
 <!-- 
@@ -139,137 +31,71 @@
 
 <style>
 	.frame {
-		width: 100vw;
-		height: 100vh;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		/* justify-content: center; */
-	}
-
-	.journal {
 		position: relative;
-		display: flex;
-		flex-direction: column;
-		/* justify-content: start; */
-		min-height: 50rem;
-		width: 75%;
-		background-color: hsl(53, 94%, 80%);
-		box-shadow: black 0 0 3px;
-		border-radius: 0 0 1rem 1rem;
-		overflow: hidden;
+		width: 100%;
+		height: 100%;
 	}
 
-	.journal:focus-within {
-		box-shadow: rgba(0, 0, 0, 0.75) 0 0 1rem;
-		transition: box-shadow 0.1s ease-out;
+	.cover {
+		--fold-dist: 0rem;
+		--fold-angle: -30deg;
+		position: absolute;
+		inset: 0;
+
+		transition: all 0.25s ease-in-out;
+		clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 0%);
 	}
 
 	.binding {
-		display: flex;
 		width: 100%;
-		height: 4rem;
-		background-color: hsl(36, 20%, 95%);
-		/* border: solid black 1px; */
-		border-radius: 0.2rem;
-		box-shadow: rgba(0, 0, 0, 0.5) 0 2px 5px;
+		height: 1.5rem;
+		background-color: white;
+		/* box-shadow: 0 0 1rem black; */
 	}
 
-	.logo {
+	.cover::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		right: 0;
+		background: linear-gradient(
+				calc(-90deg - var(--fold-angle)),
+				rgba(130, 130, 130, 0.4) 0,
+				rgba(116, 116, 116, 0.4),
+				rgba(166, 166, 166, 0.4)
+			)
+			no-repeat 100% 0;
+		clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 0%);
+		width: calc(var(--fold-dist) * 1.25);
+		height: calc(var(--fold-dist) * 2);
+		transform-origin: bottom right;
+		translate: calc(-0.95 * var(--fold-dist)) calc(var(--fold-dist) * 0.6);
+		rotate: 30deg;
+		border-top-left-radius: 1rem;
+		box-shadow: 0em 0em 0.3em -0.1em rgba(0, 0, 0, 0.15);
+		transition: all 0.25s ease-in-out;
+	}
+
+	.cover:hover {
+		--fold-dist: 3rem;
+		background-position: 100% 100%;
+		clip-path: polygon(0% 0%, 100% 0%, 100% 69%, 27% 100%, 0% 100%, 0% 0%);
+	}
+
+	.name {
+		position: absolute;
 		display: flex;
-		margin: auto 0 auto 3rem;
-		flex-direction: column;
-		line-height: 1.25rem;
-		font-family: 'Neuton', serif;
-		font-weight: 800;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 2rem;
+		top: 2rem;
+		pointer-events: none;
+
+		font-family: 'Caveat', cursive;
+		font-weight: 900;
 		font-style: normal;
-		font-size: 1.5rem;
-		color: hsl(359, 57%, 51%);
-		/* background-color: orange; */
-		user-select: none;
-	}
-
-	.paper {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		font-family: 'Protest Riot', sans-serif;
-		font-weight: 100;
-		font-style: normal;
-		color: hsl(35, 10%, 25%);
-		background-image: linear-gradient(
-				to right,
-				transparent 0,
-				transparent 2.7rem,
-				hsl(23, 62%, 60%) 2.7rem,
-				hsl(23, 62%, 60%) 2.8rem,
-				transparent 2.8rem,
-				transparent 2.9rem,
-				hsl(23, 62%, 60%) 2.9rem,
-				hsl(23, 62%, 60%) 3rem,
-				transparent 3rem
-			),
-			linear-gradient(
-				to left,
-				transparent 0,
-				transparent 2.7rem,
-				hsl(23, 62%, 60%, 0.15) 2.7rem,
-				hsl(23, 62%, 60%, 0.15) 2.8rem,
-				transparent 2.8rem,
-				transparent 2.9rem,
-				hsl(23, 62%, 60%, 0.15) 2.9rem,
-				hsl(23, 62%, 60%, 0.15) 3rem,
-				transparent 3rem
-			);
-	}
-
-	.header {
-		height: 4rem;
-		display: flex;
-		align-items: end;
-		justify-content: space-between;
-		padding: 0 4rem;
-		gap: 1rem;
-		/* background-color: orange; */
-	}
-
-	.title,
-	.date {
-		border: none;
-		outline: none;
-		background: none;
-		font-family: inherit;
-		font-size: 1.25rem;
-		height: 1.25rem;
-		color: inherit;
-		overflow: hidden;
-	}
-
-	.title {
-		flex: 1;
-	}
-	.date {
-		text-align: end;
-	}
-
-	.text-box {
-		background-image: repeating-linear-gradient(
-			to bottom,
-			hsl(101, 33%, 68%) 0rem,
-			hsl(101, 33%, 68%) 0.1rem,
-			transparent 0.1rem,
-			transparent 1rem
-		);
-		resize: none;
-		outline: none;
-		border: none;
-		line-height: 1rem;
-		/* inset: 0; */
-		flex: 1;
-		background-color: transparent;
-		padding: 0.2rem 4rem 0rem 4rem;
-		/* inset: 3rem; */
-		font-family: inherit;
-		color: inherit;
+		font-size: 2rem;
+		color: hsl(0, 12%, 92%);
 	}
 </style>

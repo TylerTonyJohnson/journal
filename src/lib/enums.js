@@ -1,6 +1,27 @@
 export class DeskStates {
-    static Viewing = new DeskStates('viewing');
-    static Styling = new DeskStates('styling');
-    static Naming = new DeskStates('naming');
-    static Editing = new DeskStates('editing');
+	constructor(value) {
+		this.value = value;
+	}
+	static Viewing = new DeskStates('viewing');
+	static Styling = new DeskStates('styling');
+	static Naming = new DeskStates('naming');
+	static Editing = new DeskStates('editing');
+}
+
+export class JournalStates {
+	constructor(value) {
+		this.value = value;
+	}
+	static Editing = new JournalStates('editing');
+	static Naming = new JournalStates('naming');
+	static Displaying = new JournalStates('displaying');
+}
+
+export class JournalTypes {
+	constructor(value) {
+		this.value = value;
+	}
+	static Legal = new JournalTypes('legal');
+	static Bullet = new JournalTypes('bullet');
+	static Composition = new JournalTypes('composition');
 }

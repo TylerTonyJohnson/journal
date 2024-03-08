@@ -1,40 +1,35 @@
 <script>
 	import { currentEntry } from '$lib/stores.js';
+	import { JournalStates } from '$lib/enums.js';
 
-	export let entryData = {
-		title: '',
-		date: new Date().toLocaleDateString('en-CA'),
-		entry: ''
-	};
-	export let isEditing;
+	export let journalState;
+	export let entryData;
 </script>
 
 <div class="frame">
-	{#if isEditing}
+	<!-- {#if journalState === JournalStates.Editing} -->
 		<div class="header">
 			<input
 				class="entry title"
-				bind:value={$currentEntry.title}
+				bind:value={entryData.title}
 				placeholder="Title here"
 				maxlength="50"
 			/>
-			<input class="entry date" type="date" bind:value={$currentEntry.date} tabindex="-1" />
+			<input class="entry date" type="date" bind:value={entryData.date} tabindex="-1" />
 		</div>
 		<div class="body">
-			<textarea
-				class="entry text"
-				bind:value={$currentEntry.text}
-				placeholder="What's going on today?"
+			<textarea class="entry text" bind:value={entryData.text} placeholder="What's going on today?"
 			></textarea>
 		</div>
 		<div class="footer"></div>
 		<div class="margin-left"></div>
 		<div class="margin-right"></div>
-	{/if}
+	<!-- {/if} -->
 </div>
 
 <style>
 	.frame {
+		position: relative;
 		display: grid;
 		width: 100%;
 		height: 100%;

@@ -3,28 +3,23 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { onMount } from 'svelte';
 
-	import { DeskStates } from '$lib/enums.js';
-	import JournalLegal from './Journals/JournalLegal.svelte';
-	import Shelf from './Shelf.svelte';
-	import DisplayLegal from './Journals/DisplayLegal.svelte';
-	import Stack from './Stack.svelte';
+	import { DeskStates, JournalTypes, JournalStates } from '$lib/enums.js';
+	import { currentJournal } from '$lib/stores.js';
 	import Journal from './Journals/Journal.svelte';
 
-	let journalData = [];
+	// Initialize
+	let journalDatas = [];
+	let entryDatas = [];
+
 	let deskState = DeskStates.Viewing;
-
-	let journalName = '';
-
-	let currentJournal;
-
-	let downloadElement;
-
-	let currentJournalType;
 
 	onMount(() => {
 		subscribeToDatabase();
 		getJournalData();
+		getEntryData();
 	});
+
+	// Methods
 
 	function subscribeToDatabase() {
 		const subscription = supabase
@@ -40,21 +35,27 @@
 					switch (payload.eventType) {
 						case 'INSERT':
 							console.log('new', payload.new);
-							journalData = [...journalData, payload.new];
+							journalDatas = [...journalDatas, payload.new];
 							break;
 						case 'DELETE':
 							console.log('old', payload.old);
-							journalData = journalData.filter((journalData) => journalData.id !== payload.old.id);
+							journalDatas = journalDatas.filter(
+								(journalData) => journalData.id !== payload.old.id
+							);
 							break;
 						case 'UPDATE':
 							console.log('old', payload.old);
-							entryData = [...entryData];
+							// entryData = [...entryData];
 							break;
 					}
 				}
 			)
 			.subscribe();
 	}
+
+	/* 
+	----- Get Data functions -----
+*/
 
 	async function getJournalData() {
 		// Get Journals
@@ -66,7 +67,20 @@
 				error: 'Could not fetch journals'
 			};
 		}
-		journalData = data ?? [];
+		journalDatas = data ?? [];
+	}
+
+	async function getEntryData() {
+		// Get entries based on what journals we have
+		const { data, error } = await supabase.from('entries').select('*');
+		if (error) {
+			console.error('Error fetching Entries', error);
+			return {
+				status: 500,
+				error: 'Could not fetch entries'
+			};
+		}
+		entryDatas = data ?? [];
 	}
 
 	function logOut() {
@@ -74,37 +88,72 @@
 		$username = '';
 	}
 
-	function newJournal() {
-		deskState = DeskStates.Styling;
-	}
+	/* 
+		---------- Journal CRUD ----------
+	*/
 
-	function selectJournal(event) {
-		console.log(event.detail);
-		currentJournalType = event.detail;
-		deskState = DeskStates.Naming;
-	}
+	async function saveJournal(event) {
+		console.log('Saving Journal in Journal.svelte');
 
-	async function submitJournal() {
-		const { data, error } = await supabase
-			.from('journals')
-			.insert([{ title: journalName, username: $username, type: currentJournalType }])
-			.select();
+		const journalToSave = event.detail;
+		console.log(journalToSave);
+
+		const saveData = { ...journalToSave, username: $username };
+
+		const { data, error } = await supabase.from('journals').insert([saveData]).select();
 		if (error) {
 			console.log('ERROR SAVING');
 		} else {
-			console.log(data);
+			console.log('Successfully saved new Journal!', data);
 		}
 
-		journalName = '';
-		deskState = DeskStates.Editing;
+		deskState = DeskStates.Viewing;
+	}
+
+	async function deleteJournal(event) {
+		console.log('deleting this journal');
+
+		const journalToDelete = event.detail;
+		console.log(journalToDelete);
+
+		const { data, error } = await supabase.from('journals').delete().eq('id', journalToDelete.id);
+		if (error) {
+			console.log('ERROR DELETING');
+		} else {
+			console.log('Successfully deleted new Journal!', data);
+		}
+	}
+
+	function selectJournal(event) {
+		const selectedData = event.detail;
+		console.log(selectedData);
+
+		switch (deskState) {
+			case DeskStates.Viewing:
+				if (selectedData.type === 'new') {
+					$currentJournal = { title: '', type: null };
+					deskState = DeskStates.Styling;
+				} else {
+					$currentJournal = selectedData;
+					deskState = DeskStates.Editing;
+				}
+				break;
+			case DeskStates.Styling:
+				deskState = DeskStates.Naming;
+				$currentJournal = {
+					title: '',
+					type: selectedData.type
+				};
+				break;
+			case DeskStates.Naming:
+				break;
+			case DeskStates.Editing:
+				break;
+		}
 	}
 
 	function goBack() {
 		deskState = DeskStates.Viewing;
-	}
-
-	function editMode() {
-		deskState = DeskStates.Editing;
 	}
 </script>
 
@@ -113,7 +162,7 @@
 	<div class="banner">
 		<div class="left">
 			{#if deskState !== DeskStates.Viewing}
-				<button on:click={goBack}>Back</button>
+				<button on:click={goBack} class="material-symbols-outlined"> arrow_back </button>
 			{/if}
 		</div>
 		<div class="middle">
@@ -121,59 +170,91 @@
 		</div>
 		<div class="right">
 			{#if $username}
-				<button on:click={logOut}>Logout</button>
+				<button on:click={logOut} class="material-symbols-outlined"> logout </button>
 			{/if}
 		</div>
 	</div>
 
-	{#if deskState === DeskStates.Viewing}
-		<div>Looking at current journals</div>
-		<Stack {journalData} on:newJournal={newJournal} on:editMode={editMode} />
-	{:else if deskState === DeskStates.Styling}
-		<div>Styling new Journal</div>
-		<Shelf {deskState} on:selectJournal={selectJournal} />
-	{:else if deskState === DeskStates.Naming}
-		<div>Naming our journal</div>
-		<form on:submit|preventDefault={submitJournal}>
-			<input placeholder="Name your Journal" type="text" bind:value={journalName} />
-			<button type="submit">SUBMIT</button>
-		</form>
-	{:else if deskState === DeskStates.Editing}
-		<div>Editing our journal</div>
-		<JournalLegal />
-	{/if}
-	<div class='journal-frame' bind:this={downloadElement}>
-		<Journal type={'bullet'} name={'Strange'} isEditing={true}/>
+	<!-- Journals (Dynamic) -->
+	<div class="journal-label">{deskState.value}</div>
+	<div class="journal-container">
+		{#if deskState === DeskStates.Viewing}
+			{#each journalDatas as journalData}
+				<Journal
+					{journalData}
+					journalState={JournalStates.Displaying}
+					{entryDatas}
+					on:selectJournal={selectJournal}
+					on:deleteJournal={deleteJournal}
+				/>
+			{/each}
+			<Journal
+				journalData={{ type: 'new' }}
+				journalState={JournalStates.Displaying}
+				{entryDatas}
+				on:selectJournal={selectJournal}
+			/>
+		{:else if deskState === DeskStates.Styling}
+			{#each Object.values(JournalTypes) as journalData}
+				<Journal
+					journalData={{ type: journalData.value }}
+					journalState={JournalStates.Styling}
+					{entryDatas}
+					on:selectJournal={selectJournal}
+				/>
+			{/each}
+		{:else if deskState === DeskStates.Naming}
+			<Journal
+				journalData={$currentJournal}
+				journalState={JournalStates.Naming}
+				{entryDatas}
+				on:saveJournal={saveJournal}
+			/>
+		{:else if deskState === DeskStates.Editing}
+			<Journal journalData={$currentJournal} journalState={JournalStates.Editing} {entryDatas} />
+		{/if}
 	</div>
 </div>
 
 <style>
 	.frame {
-		/* position: fixed; */
-		/* height: 100vh; */
-		/* width: 100vw; */
+		/* position: relative; */
 		background-color: lavender;
-		/* padding: 1rem; */
 	}
 
 	.banner {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		justify-content: center;
 		align-items: center;
-		gap: 1rem;
+		/* gap: 1rem; */
 		padding: 2rem;
 		background-color: red;
 	}
+	.banner .left {
+		display: flex;
+		justify-content: start;
+		/* border: solid blue 1px; */
+	}
+	.banner .right {
+		display: flex;
+		justify-content: end;
+		/* border: solid green 1px; */
+	}
+	.banner .middle {
+		/* border: solid yellow 1px; */
+	}
 
 	.name {
-		color: tan;
+		color: white;
 		font-size: 2rem;
 	}
 
-	.journal-frame {
-		width: 34rem;
-		height: 44rem;
-		margin: 1rem auto;
-		/* border: solid red 1px; */
+	.journal-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 1rem;
+		gap: 1rem;
 	}
 </style>

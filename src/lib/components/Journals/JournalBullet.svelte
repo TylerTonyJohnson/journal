@@ -1,16 +1,51 @@
+<!-- 
+	-------------------- FUNCTIONALITY -------------------- 
+ -->
+
 <script>
+	import { createEventDispatcher } from 'svelte';
+	import { JournalStates } from '$lib/enums.js';
+	import { currentJournal } from '$lib/stores.js';
 	import PageBullet from './PageBullet.svelte';
 
-	export let name;
-	export let isEditing;
+	export let journalData;
+	export let journalState;
+	export let entryDatas;
+	$: console.log('entries', entryDatas);
+
+	const dispatch = createEventDispatcher();
+
+	function submitName() {
+		dispatch('submitName');
+		console.log($currentJournal.title, 'saving in JournalBullet.svelte');
+	}
 </script>
 
+<!-- 
+	-------------------- STRUCTURE -------------------- 
+ -->
+
 <div class="frame">
-	{#if !isEditing}
-		<div class="name">{name}</div>
+	{#each entryDatas as entryData}
+		<PageBullet {journalState} {entryData} />
+	{/each}
+	{#if journalState !== JournalStates.Editing}
+		<div class="cover">
+			{#if journalState === JournalStates.Naming}
+				<form on:submit={submitName}>
+					<input type="text" bind:value={$currentJournal.title} placeholder="Choose a name" />
+					<button type="submit">SUBMIT</button>
+				</form>
+			{:else}
+				<div class="title">{journalData.title}</div>
+			{/if}
+		</div>
 	{/if}
-	<PageBullet {name} {isEditing} />
 </div>
+
+<!-- 
+	-------------------- STYLE -------------------- 
+ -->
 
 <style>
 	.frame {
@@ -19,20 +54,61 @@
 		height: 100%;
 	}
 
-	.name {
+	.cover {
+		--fold-dist: 0rem;
+		--fold-angle: -30deg;
 		position: absolute;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+		inset: 0;
+
+		background-image: linear-gradient(to bottom, hsl(205, 26%, 25%), hsl(207, 33%, 14%));
+
+		transition: all 0.25s ease-in-out;
+		clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 0%);
+	}
+
+	.cover::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		right: 0;
+		background: linear-gradient(
+				calc(-90deg - var(--fold-angle)),
+				rgba(130, 130, 130, 0.4) 0,
+				rgba(116, 116, 116, 0.4),
+				rgba(166, 166, 166, 0.4)
+			)
+			no-repeat 100% 0;
+		clip-path: polygon(0% 0%, 100% 0%, 0% 100%, 0% 0%);
+		width: calc(var(--fold-dist) * 1.25);
+		height: calc(var(--fold-dist) * 2);
+		transform-origin: bottom right;
+		translate: calc(-0.95 * var(--fold-dist)) calc(var(--fold-dist) * 0.6);
+		rotate: 30deg;
+		border-top-left-radius: 1rem;
+		box-shadow: 0em 0em 0.3em -0.1em rgba(0, 0, 0, 0.15);
+		transition: all 0.25s ease-in-out;
+	}
+
+	.cover:hover {
+		--fold-dist: 3rem;
+		background-position: 100% 100%;
+		clip-path: polygon(0% 0%, 100% 0%, 100% 69%, 27% 100%, 0% 100%, 0% 0%);
+	}
+
+	.title {
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 		width: 100%;
 		height: 2rem;
-		outline: none;
-		border: none;
-		background-image: linear-gradient(transparent 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
-        font-family: 'Caveat', cursive;
+		top: 2rem;
+		pointer-events: none;
+
+		font-family: 'Caveat', cursive;
 		font-weight: 900;
 		font-style: normal;
-        font-size: 2rem;
-		color: hsl(0, 3%, 23%);
+		font-size: 2rem;
+		color: hsl(0, 12%, 92%);
 	}
 </style>
