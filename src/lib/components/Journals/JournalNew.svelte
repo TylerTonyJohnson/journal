@@ -25,6 +25,7 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+        cursor: pointer;
 	}
 
 	.journal {
@@ -41,5 +42,6 @@
 
     .material-symbols-outlined {
         color: green;
+        user-select: none;
     }
 </style>

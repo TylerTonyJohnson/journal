@@ -72,7 +72,11 @@
 
 	async function getEntryData() {
 		// Get entries based on what journals we have
-		const { data, error } = await supabase.from('entries').select('*');
+		const { data, error } = await supabase
+			.from('entries')
+			.select('*')
+			.order('date', { ascending: false })
+			.order('created_at', {ascending: false});
 		if (error) {
 			console.error('Error fetching Entries', error);
 			return {
@@ -183,7 +187,7 @@
 				<Journal
 					{journalData}
 					journalState={JournalStates.Displaying}
-					{entryDatas}
+					entryDatas={entryDatas.filter((entry) => entry.journal === journalData.id)}
 					on:selectJournal={selectJournal}
 					on:deleteJournal={deleteJournal}
 				/>
@@ -211,7 +215,11 @@
 				on:saveJournal={saveJournal}
 			/>
 		{:else if deskState === DeskStates.Editing}
-			<Journal journalData={$currentJournal} journalState={JournalStates.Editing} {entryDatas} />
+			<Journal
+				journalData={$currentJournal}
+				journalState={JournalStates.Editing}
+				entryDatas={entryDatas.filter((entry) => entry.journal === $currentJournal.id)}
+			/>
 		{/if}
 	</div>
 </div>

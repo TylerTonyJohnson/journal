@@ -1,49 +1,39 @@
 <script>
-	import { currentEntry } from '$lib/stores.js';
-	import { JournalStates } from '$lib/enums.js';
-
-	export let journalState;
-	export let entryData;
+	export let entryData = {
+        title: 'BUTT',
+        date: 'FART',
+        text: 'DOODOO',
+    };
 </script>
 
 <div class="frame">
-	{#if journalState === JournalStates.Editing}
 	<div class="header">
 		<input
 			class="entry title"
-			bind:value={entryData.title}
 			placeholder="Title here"
 			maxlength="50"
+			bind:value={entryData.title}
 		/>
-		<input class="entry date" type="date" bind:value={entryData.date} tabindex="-1" />
+		<input class="entry date" type="date" tabindex="-1" bind:value={entryData.date} />
 	</div>
 	<div class="body">
-		<textarea class="entry text" bind:value={entryData.text} placeholder="What's going on today?"
+		<textarea class="entry text" placeholder="What's going on today?" bind:value={entryData.text}
 		></textarea>
 	</div>
-	<div class="footer"></div>
-	<div class="margin-left"></div>
-	<div class="margin-right"></div>
-	{/if}
 </div>
 
 <style>
 	.frame {
 		position: relative;
 		display: grid;
-		width: 100%;
-		height: 100%;
+		/* width: 100%;
+		height: 100%; */
 		grid-template-areas:
 			'ml    h   mr'
 			'ml    b   mr'
 			'ml    f   mr';
 		grid-template-columns: 2rem auto 2rem;
 		grid-template-rows: 4rem auto 2rem;
-		background-color: hsl(64, 23%, 88%);
-		background-image: radial-gradient(circle, hsl(101, 33%, 68%) 1px, transparent 1px);
-		background-size: 1rem 1rem;
-		background-position: 50% 50%;
-
 		/* font-optical-sizing: auto; */
 		font-family: 'Caveat', cursive;
 		font-weight: 900;
@@ -100,19 +90,5 @@
 		font-size: 1rem;
 		line-height: 1rem;
 		padding-top: 0.1rem;
-	}
-
-	.footer {
-		grid-area: f;
-		/* border: solid purple 1px; */
-	}
-
-	.margin-left {
-		grid-area: ml;
-		/* border: solid red 1px; */
-	}
-	.margin-right {
-		grid-area: mr;
-		/* border: solid green 1px; */
 	}
 </style>

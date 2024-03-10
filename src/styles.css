@@ -1,3 +1,7 @@
+html {
+    font-size: 16px;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -6,9 +10,14 @@
 
 button {
     background: none;
-    border: none;
+    border: solid transparent 2px;
+    border-radius: 0.35rem;
     padding: 0;
     font-size: 24px; /* Adjust the size as needed */
     color: rgba(255, 255, 255, 1); /* Use black color with 54% opacity for light backgrounds */
     cursor: pointer;
+    transition: border 0.1s linear;
+}
+button:hover {
+    border: solid white 2px;
 }

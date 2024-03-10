@@ -11,5 +11,7 @@ export const currentJournal = writable({
 export const currentEntry = writable({
 	title: '',
 	date: new Date().toLocaleDateString('en-CA'),
-	text: ''
+	text: '',
+	username: '',
+	journal: ''
 });

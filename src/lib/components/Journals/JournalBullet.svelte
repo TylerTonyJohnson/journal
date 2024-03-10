@@ -11,6 +11,11 @@
 	export let journalData;
 	export let journalState;
 	export let entryDatas;
+	export let currentPage;
+
+
+
+	$: currentEntry = entryDatas[currentPage];
 	$: console.log('entries', entryDatas);
 
 	const dispatch = createEventDispatcher();
@@ -26,9 +31,11 @@
  -->
 
 <div class="frame">
-	{#each entryDatas as entryData}
-		<PageBullet {journalState} {entryData} />
-	{/each}
+	<!-- <PageBullet {journalState} /> -->
+	{#if currentEntry}
+		<PageBullet {journalState} entryData={currentEntry} />
+	{/if}
+
 	{#if journalState !== JournalStates.Editing}
 		<div class="cover">
 			{#if journalState === JournalStates.Naming}
@@ -50,8 +57,12 @@
 <style>
 	.frame {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		width: 100%;
 		height: 100%;
+		border-radius: 1rem;
+		overflow: hidden;
 	}
 
 	.cover {
@@ -59,9 +70,7 @@
 		--fold-angle: -30deg;
 		position: absolute;
 		inset: 0;
-
 		background-image: linear-gradient(to bottom, hsl(205, 26%, 25%), hsl(207, 33%, 14%));
-
 		transition: all 0.25s ease-in-out;
 		clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 0%);
 	}
@@ -103,7 +112,9 @@
 		width: 100%;
 		height: 2rem;
 		top: 2rem;
+
 		pointer-events: none;
+		user-select: none;
 
 		font-family: 'Caveat', cursive;
 		font-weight: 900;

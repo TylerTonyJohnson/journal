@@ -10,7 +10,19 @@
 	export let journalData;
 	export let journalState;
 	export let entryDatas;
+
+	const dummyEntry = {
+		title: '',
+		date: new Date().toLocaleDateString('en-CA'),
+		text: ''
+	};
+
+	newEntry();
+
+	// $: newEntrys = [dummyEntry, ...entryDatas];
+
 	$: console.log(journalState);
+	let currentPage = 0;
 
 	const dispatch = createEventDispatcher();
 
@@ -30,69 +42,93 @@
 	}
 
 	async function saveEntry() {
-		if (!$currentEntry.title && !$currentEntry.text) {
+		if (!entryDatas[currentPage].title && !entryDatas[currentPage].text) {
 			console.log('Missing data!');
 			return;
 		}
 
-		const saveData = { ...$currentEntry, username: $username, journal: $currentJournal.id };
+		const saveData = { ...entryDatas[currentPage], username: $username, journal: journalData.id };
 
 		const { data, error } = await supabase.from('entries').upsert(saveData).select();
 		if (error) {
 			console.log('ERROR SAVING');
 		} else {
 			console.log(data);
-			clearEntryStore();
 		}
 	}
 
-	function clearEntryStore() {
-		$currentEntry = {
-			title: '',
-			date: new Date().toLocaleDateString('en-CA'),
-			text: ''
-		};
+	function newEntry() {
+		entryDatas = [dummyEntry, ...entryDatas];
+	}
+
+	function nextPage() {
+		currentPage = (currentPage + 1) % entryDatas.length;
+	}
+	function previousPage() {
+		currentPage = (currentPage - 1 + entryDatas.length) % entryDatas.length;
 	}
 </script>
 
-<!-- Save Button -->
-{#if journalState === JournalStates.Editing}
-	<button type="button" on:click={saveEntry}>SAVE</button>
-{/if}
-
-<!-- Journal -->
-
-<div
-	class="journal-frame"
-	on:click={selectJournal}
-	class:display={journalState === JournalStates.Displaying}
-	class:edit={journalState === JournalStates.Editing}
->
-	{#if journalData.type === 'none'}
-		<div>NO TYPE</div>
-	{:else if journalData.type === 'new'}
-		<JournalNew />
-	{:else if journalData.type === 'bullet'}
-		<JournalBullet {journalData} {journalState} {entryDatas} on:submitName={saveJournal} />
-	{:else if journalData.type === 'legal'}
-		<JournalLegal {journalData} {journalState} {entryDatas} on:submitName={saveJournal} />
+<div class="frame">
+	<!-- Save Button -->
+	{#if journalState === JournalStates.Editing}
+		<div class="buttons">
+			<button type="button" on:click={previousPage}>PREVIOUS</button>
+			<button type="button" on:click={saveEntry}>SAVE</button>
+			<button type="button" on:click={newEntry}>NEW</button>
+			<button type="button" on:click={nextPage}>NEXT</button>
+		</div>
 	{/if}
-	{#if journalState === JournalStates.Displaying && journalData.type !== 'new'}
-		<button class="overlay material-symbols-outlined" on:click|stopPropagation={deleteJournal}>
-			delete_forever
-		</button>
-	{/if}
+
+	<!-- Journal -->
+
+	<div
+		class="journal-frame"
+		on:click={selectJournal}
+		class:display={journalState === JournalStates.Displaying}
+		class:edit={journalState === JournalStates.Editing}
+	>
+		{#if journalData.type === 'none'}
+			<div>NO TYPE</div>
+		{:else if journalData.type === 'new'}
+			<JournalNew />
+		{:else if journalData.type === 'bullet'}
+			<JournalBullet
+				{journalData}
+				{journalState}
+				{entryDatas}
+				{currentPage}
+				on:submitName={saveJournal}
+			/>
+		{:else if journalData.type === 'legal'}
+			<JournalLegal
+				{journalData}
+				{journalState}
+				{entryDatas}
+				{currentPage}
+				on:submitName={saveJournal}
+			/>
+		{/if}
+		{#if journalState === JournalStates.Displaying && journalData.type !== 'new'}
+			<button class="overlay material-symbols-outlined" on:click|stopPropagation={deleteJournal}>
+				delete_forever
+			</button>
+		{/if}
+	</div>
 </div>
 
 <style>
 	.journal-frame {
 		position: relative;
+		display: flex;
 		width: 8.5rem;
 		height: 11rem;
 		border-radius: 1rem;
-		overflow: hidden;
+		/* overflow: hidden; */
 		box-shadow: darkgray 0 0 1rem;
 		transition: all 0.25s ease-in-out;
+
+		cursor: pointer;
 	}
 
 	.journal-frame.display {
@@ -115,5 +151,12 @@
 		top: 0.25rem;
 		right: 0.25rem;
 		color: red;
+		user-select: none;
+	}
+
+	.buttons {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 	}
 </style>
