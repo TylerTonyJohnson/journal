@@ -1,5 +1,6 @@
 <script>
 	import { username } from '$lib/stores.js';
+	// import woodTexture from '$lib/images/Wood Texture.png';
 
 	let enteredName;
 
@@ -10,7 +11,9 @@
 	}
 </script>
 
-<form class="login" on:submit|preventDefault={submitUserName}>
+<form class="login" on:submit|preventDefault={submitUserName}
+	style="background: url('Wood Texture.png');"
+>
 	<input class="input" placeholder="Choose a name" type="text" bind:value={enteredName} />
 	<button class="button" type="submit">SUBMIT</button>
 </form>
@@ -28,7 +31,6 @@
 		justify-content: center;
 		align-items: center;
 
-		background-image: url('Wood Texture.png');
 		border-radius: 0.5rem;
 		background-size: cover;
 		box-shadow:
