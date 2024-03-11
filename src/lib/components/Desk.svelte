@@ -14,14 +14,15 @@
 	let deskState = DeskStates.Viewing;
 
 	onMount(() => {
-		subscribeToDatabase();
+		subscribeToJournals();
+		subscribeToEntries();
 		getJournalData();
 		getEntryData();
 	});
 
 	// Methods
 
-	function subscribeToDatabase() {
+	function subscribeToJournals() {
 		const subscription = supabase
 			.channel('journal_channel')
 			.on(
@@ -45,12 +46,45 @@
 							break;
 						case 'UPDATE':
 							console.log('old', payload.old);
-							// entryData = [...entryData];
+							journalDatas = [...journalDatas];
 							break;
 					}
 				}
 			)
 			.subscribe();
+	}
+
+	function subscribeToEntries() {
+		const subscription = supabase
+			.channel('entries_channel')
+			.on(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'entries'
+				},
+				(payload) => {
+					switch (payload.eventType) {
+						case 'INSERT':
+							console.log('new', payload.new);
+							entryDatas = [...entryDatas, payload.new];
+							break;
+						case 'DELETE':
+							console.log('old', payload.old);
+							entryDatas = entryDatas.filter(
+								(entryData) => entryData.id !== payload.old.id
+							);
+							break;
+						case 'UPDATE':
+							console.log('old', payload.old);
+							entryDatas = [...entryDatas];
+							break;
+					}
+				}
+			)
+			.subscribe();
+
 	}
 
 	/* 
@@ -76,7 +110,7 @@
 			.from('entries')
 			.select('*')
 			.order('date', { ascending: false })
-			.order('created_at', {ascending: false});
+			.order('created_at', { ascending: false });
 		if (error) {
 			console.error('Error fetching Entries', error);
 			return {
@@ -231,6 +265,8 @@
 	}
 
 	.banner {
+		/* position: fixed; */
+		/* width: 100%; */
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
 		justify-content: center;

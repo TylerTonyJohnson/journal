@@ -17,12 +17,12 @@
 		text: ''
 	};
 
+	$: console.log(journalState);
+	let currentPage = 0;
+
 	newEntry();
 
 	// $: newEntrys = [dummyEntry, ...entryDatas];
-
-	$: console.log(journalState);
-	let currentPage = 0;
 
 	const dispatch = createEventDispatcher();
 
@@ -59,13 +59,30 @@
 
 	function newEntry() {
 		entryDatas = [dummyEntry, ...entryDatas];
+		currentPage = 0;
+	}
+
+	async function deleteEntry() {
+		const { data, error } = await supabase
+			.from('entries')
+			.delete()
+			.eq('id', entryDatas[currentPage].id);
+
+		if (error) {
+			console.log('ERROR DELETING');
+		} else {
+			console.log(data);
+		}
 	}
 
 	function nextPage() {
-		currentPage = (currentPage + 1) % entryDatas.length;
+		currentPage = Math.min(currentPage + 1, entryDatas.length - 1);
+
+		// currentPage = (currentPage + 1) % entryDatas.length;
 	}
 	function previousPage() {
-		currentPage = (currentPage - 1 + entryDatas.length) % entryDatas.length;
+		currentPage = Math.max(currentPage - 1, 0);
+		// currentPage = (currentPage - 1 + entryDatas.length) % entryDatas.length;
 	}
 </script>
 
@@ -73,10 +90,13 @@
 	<!-- Save Button -->
 	{#if journalState === JournalStates.Editing}
 		<div class="buttons">
-			<button type="button" on:click={previousPage}>PREVIOUS</button>
-			<button type="button" on:click={saveEntry}>SAVE</button>
+			<button type="button" on:click={previousPage} disabled={currentPage <= 0}>PREVIOUS</button>
 			<button type="button" on:click={newEntry}>NEW</button>
-			<button type="button" on:click={nextPage}>NEXT</button>
+			<button type="button" on:click={saveEntry}>SAVE</button>
+			<button type="button" on:click={deleteEntry}>DELETE</button>
+			<button type="button" on:click={nextPage} disabled={currentPage >= entryDatas.length - 1}
+				>NEXT</button
+			>
 		</div>
 	{/if}
 

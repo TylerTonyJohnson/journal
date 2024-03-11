@@ -13,8 +13,6 @@
 	export let entryDatas;
 	export let currentPage;
 
-
-
 	$: currentEntry = entryDatas[currentPage];
 	$: console.log('entries', entryDatas);
 
@@ -31,7 +29,6 @@
  -->
 
 <div class="frame">
-	<!-- <PageBullet {journalState} /> -->
 	{#if currentEntry}
 		<PageBullet {journalState} entryData={currentEntry} />
 	{/if}
