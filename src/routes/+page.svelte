@@ -16,8 +16,22 @@
 
 <div>
 	{#if !$username}
-		<Login />
+		<div class='frame'>
+			<Login />
+		</div>
 	{:else}
 		<Desk />
+		<!-- <Deskcopy /> -->
+		<!-- <Deskcopy2 /> -->
 	{/if}
 </div>
+
+<style>
+	.frame {
+		display: flex;
+		width: 100vw;
+		height: 100vh;
+		/* background-color: green; */
+	}
+
+</style>

@@ -14,7 +14,7 @@ export class JournalStates {
 	}
 	static Editing = new JournalStates('editing');
 	static Naming = new JournalStates('naming');
-	static Displaying = new JournalStates('displaying');
+	static Viewing = new JournalStates('viewing');
 }
 
 export class JournalTypes {

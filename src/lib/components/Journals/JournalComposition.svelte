@@ -7,7 +7,7 @@
 	import { JournalStates } from '$lib/enums.js';
 	import { currentJournal } from '$lib/stores.js';
 
-	import PageLegal from './PageLegal.svelte';
+	import PageComposition from './PageComposition.svelte';
 
 	export let journalData;
 	export let journalState;
@@ -28,11 +28,7 @@
 	-------------------- STRUCTURE -------------------- 
  -->
 
-<div
-	class="frame"
-	class:small={journalState !== JournalStates.Editing}
-	class:large={journalState == JournalStates.Editing}
->
+<div class="frame">
 	<div class="spine" />
 	<div class="content">
 		<!--  Back Cover -->
@@ -42,7 +38,7 @@
 		</div>
 		<!-- Pages -->
 		<div class="pages">
-			<PageLegal {journalState} entryData={currentEntry} />
+			<PageComposition {journalState} entryData={currentEntry} />
 		</div>
 		<!-- Front Cover -->
 		<div
@@ -51,8 +47,11 @@
 			class:flip={journalState === JournalStates.Viewing}
 			class:open={journalState === JournalStates.Editing}
 		>
-			<div class="inside" class:faded={journalState === JournalStates.Editing}></div>
-			<div class="outside">
+			<div 
+                class="inside" 
+                class:faded={journalState === JournalStates.Editing}
+            ></div>
+			<div class="outside" style="background-image: url('Composition Texture.png')">
 				<div class="box">
 					{#if journalState === JournalStates.Naming}
 						<form on:submit={submitName}>
@@ -73,39 +72,19 @@
  -->
 
 <style>
-	.small {
-		--spine-thickness: 1rem;
-		--margin-top: 2rem;
-		--margin-left: 1rem;
-		--margin-right: 1rem;
-		--margin-bottom: 1rem;
-		--line-scale: 0.5;
-	}
-
-	.large {
-		--spine-thickness: 3rem;
-		--margin-top: 4rem;
-		--margin-left: 3rem;
-		--margin-right: 3rem;
-		--margin-bottom: 3rem;
-		--line-scale: 1;
-	}
-
 	.frame {
 		position: relative;
 		display: flex;
-		flex-direction: column;
 		width: 100%;
 		height: 100%;
 	}
 
 	.spine {
-		height: var(--spine-thickness);
-		width: 100%;
-		background-color: rgb(241, 234, 234);
-		border-top-left-radius: 0rem;
-		border-bottom-left-radius: 0rem;
-		box-shadow: 0 2px 2px 0px #0004;
+		height: 100%;
+		width: 1rem;
+		background-color: rgb(25, 24, 24);
+		border-top-left-radius: 0.25rem;
+		border-bottom-left-radius: 0.25rem;
 	}
 
 	.content {
@@ -125,37 +104,14 @@
 		position: absolute;
 		inset: 0;
 		transform: rotateY(-180deg);
-
+		border-radius: 0.75rem 0 0 0.75rem;
+		background-size: contain;
+		background-position: 0 0;
 		backface-visibility: hidden;
-		background-image: linear-gradient(
-				to right,
-				transparent 0,
-				transparent calc(var(--margin-left) - 2px),
-				hsl(23, 62%, 60%) var(--margin-left),
-				hsl(23, 62%, 60%) 0,
-				transparent var(--margin-left)
-			),
-			linear-gradient(
-				to left,
-				transparent 0,
-				transparent calc(var(--margin-right) - 2px),
-				hsl(23, 62%, 60%, 0.15) var(--margin-right),
-				hsl(23, 62%, 60%, 0.15) 0,
-				transparent var(--margin-right)
-			),
-			linear-gradient(
-				to bottom,
-				hsl(53, 94%, 80%) 0%,
-				hsl(53, 94%, 80%) var(--margin-top),
-				transparent var(--margin-top)
-			),
-			repeating-linear-gradient(
-				to bottom,
-				hsl(101, 33%, 68%) 0rem,
-				hsl(101, 33%, 68%) 1px,
-				hsl(53, 94%, 80%) 1px,
-				hsl(53, 94%, 80%) calc(1rem * var(--line-scale))
-			);
+		background-color: hsl(220, 18%, 90%);
+		/* border: solid hsl(220,18%,85%) 2px; */
+		/* box-shadow: inset -3px 0px 3px #0003; */
+		/* box-shadow: inset 10px -10px 15px -5px rgba(0, 0, 0, 0.5); */
 		box-shadow:
 			inset -7px 0 9px -7px rgba(0, 0, 0, 0.4),
 			0px 0 10px 5px #0004;
@@ -165,49 +121,22 @@
 		position: absolute;
 		inset: 0;
 		display: flex;
+
+		background-size: contain;
+		background-position: 0 0;
 		backface-visibility: hidden;
-		background-image: linear-gradient(
-				to right,
-				transparent 0,
-				transparent calc(var(--margin-left) - 2px),
-				hsl(23, 62%, 60%) var(--margin-left),
-				hsl(23, 62%, 60%) 0,
-				transparent var(--margin-left)
-			),
-			linear-gradient(
-				to left,
-				transparent 0,
-				transparent calc(var(--margin-right) - 2px),
-				hsl(23, 62%, 60%, 0.15) var(--margin-right),
-				hsl(23, 62%, 60%, 0.15) 0,
-				transparent var(--margin-right)
-			),
-			linear-gradient(
-				to bottom,
-				hsl(53, 94%, 80%) 0%,
-				hsl(53, 94%, 80%) var(--margin-top),
-				transparent var(--margin-top)
-			),
-			repeating-linear-gradient(
-				to bottom,
-				hsl(101, 33%, 68%) 0rem,
-				hsl(101, 33%, 68%) 1px,
-				hsl(53, 94%, 80%) 1px,
-				hsl(53, 94%, 80%) calc(1rem * var(--line-scale))
-			);
+		border-radius: 0 0.75rem 0.75rem 0;
 	}
 
 	.box {
-		position: absolute;
 		width: 75%;
 		height: 25%;
-		left: 50%;
-		top: 3rem;
-		translate: -50% -50%;
 		display: flex;
 		justify-content: center;
 		overflow: hidden;
 
+		background-color: white;
+		margin: 3rem auto auto auto;
 		border: solid black 1px;
 		border-radius: 0.5rem;
 	}
@@ -234,7 +163,7 @@
 
 	/* Attachable styles */
 	.faded {
-		mask-image: linear-gradient(to bottom, black 0, black 20%, transparent 40%);
+		mask-image: linear-gradient(to left, black 0, black 20%, transparent 40%);
 	}
 
 	.peel {
@@ -270,14 +199,14 @@
 
 	.flip,
 	.open {
-		transform: rotateX(0deg);
+		transform: rotateY(0deg);
 		transition: transform 0.25s ease-in-out;
-		transform-origin: top;
+		transform-origin: left;
 		transform-style: preserve-3d;
 	}
 
 	.content:hover .flip {
-		transform: rotateX(160deg);
+		transform: rotateY(-160deg);
 	}
 
 	.content:hover .peel {
@@ -286,6 +215,6 @@
 	}
 
 	.open {
-		transform: rotateX(-180deg);
+		transform: rotateY(-180deg);
 	}
 </style>

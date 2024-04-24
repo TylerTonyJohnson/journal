@@ -1,19 +1,8 @@
 <script>
 	import { JournalStates } from '$lib/enums.js';
-	import { createEventDispatcher } from 'svelte';
 
 	export let journalState;
 	export let entryData;
-
-	// Setup
-
-	const dispatch = createEventDispatcher();
-
-	// Functions
-
-	function handleInputChange() {
-		dispatch('inputChange', entryData);
-	}
 </script>
 
 <div
@@ -26,24 +15,13 @@
 			<input
 				class="entry title"
 				bind:value={entryData.title}
-				on:input={handleInputChange}
 				placeholder="Title here"
 				maxlength="50"
 			/>
-			<input
-				class="entry date"
-				type="date"
-				bind:value={entryData.date}
-				on:input={handleInputChange}
-				tabindex="-1"
-			/>
+			<input class="entry date" type="date" bind:value={entryData.date} tabindex="-1" />
 		</div>
 		<div class="body">
-			<textarea
-				class="entry text"
-				bind:value={entryData.text}
-				on:input={handleInputChange}
-				placeholder="What's going on today?"
+			<textarea class="entry text" bind:value={entryData.text} placeholder="What's going on today?"
 			></textarea>
 		</div>
 		<div class="footer"></div>
@@ -59,7 +37,7 @@
 		--margin-right: 1rem;
 		--margin-bottom: 1rem;
 		--line-scale: 0.5;
-		--corner-radius: 0.75rem;
+        --corner-radius: 0.75rem;
 	}
 	.large {
 		--margin-top: 4rem;
@@ -67,7 +45,7 @@
 		--margin-right: 3rem;
 		--margin-bottom: 3rem;
 		--line-scale: 1;
-		--corner-radius: 1rem;
+        --corner-radius: 1rem;
 	}
 
 	.frame {
@@ -88,11 +66,35 @@
 		color: hsl(0, 3%, 23%);
 		border-radius: 0 var(--corner-radius) var(--corner-radius) 0;
 
-		background-color: hsl(64, 23%, 88%);
-		background-image: radial-gradient(circle, hsl(101, 33%, 68%, 0.75) 1px, transparent 1px);
-		background-size: calc(1rem * var(--line-scale)) calc(1rem * var(--line-scale));
-		background-position: 50% 50%;
-		/* font-optical-sizing: auto; */
+		background-image: linear-gradient(
+				to right,
+				transparent 0,
+				transparent calc(var(--margin-left) - 2px),
+				hsl(5, 22%, 80%) var(--margin-left),
+				hsl(5, 22%, 80%) 0,
+				transparent var(--margin-left)
+			),
+			linear-gradient(
+				to left,
+				transparent 0,
+				transparent calc(var(--margin-right) - 2px),
+				hsl(23, 62%, 60%, 0.15) var(--margin-right),
+				hsl(23, 62%, 60%, 0.15) 0,
+				transparent var(--margin-right)
+			),
+			linear-gradient(
+				to bottom,
+				hsl(222, 19%, 90%) 0%,
+				hsl(222, 19%, 90%) var(--margin-top),
+				transparent var(--margin-top)
+			),
+			repeating-linear-gradient(
+				to bottom,
+				hsl(208, 31%, 77%) 0rem,
+				hsl(208, 31%, 77%) 1px,
+				hsl(222, 19%, 90%) 1px,
+				hsl(222, 19%, 90%) calc(1rem * var(--line-scale))
+			);
 	}
 
 	.header {
