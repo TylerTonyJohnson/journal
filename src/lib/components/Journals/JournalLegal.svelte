@@ -15,7 +15,7 @@
 	export let currentPage;
 
 	$: currentEntry = entryDatas[currentPage];
-	$: console.log('entries', entryDatas);
+	// $: console.log('entries', entryDatas);
 
 	const dispatch = createEventDispatcher();
 

@@ -2,6 +2,8 @@ export class DeskStates {
 	constructor(value) {
 		this.value = value;
 	}
+	static Entering = new DeskStates('entering');
+	static Creating = new DeskStates('creating');
 	static Viewing = new DeskStates('viewing');
 	static Styling = new DeskStates('styling');
 	static Naming = new DeskStates('naming');
@@ -12,9 +14,9 @@ export class JournalStates {
 	constructor(value) {
 		this.value = value;
 	}
-	static Editing = new JournalStates('editing');
-	static Naming = new JournalStates('naming');
 	static Viewing = new JournalStates('viewing');
+	static Naming = new JournalStates('naming');
+	static Editing = new JournalStates('editing');
 }
 
 export class JournalTypes {

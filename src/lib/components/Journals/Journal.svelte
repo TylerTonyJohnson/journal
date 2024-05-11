@@ -47,14 +47,36 @@
 		dispatch('selectJournal', journalData);
 	}
 
-	function saveJournal() {
-		console.log('Saving Journal from Journal');
-		dispatch('saveJournal', journalData);
+	/* 
+		---------- Journal CRUD ----------
+	*/
+
+	async function saveJournal(event) {
+		const journalToSave = event.detail;
+		console.log(journalToSave);
+
+		// Strip out id from save data, add in username
+		const { id, ...saveData} = { ...journalToSave, username: $username };
+
+		const { data, error } = await supabase.from('journals').insert([saveData]).select();
+		if (error) {
+			console.log('ERROR SAVING');
+		} else {
+			console.log('Successfully saved new Journal!', data);
+			journalData.id = data[0].id;
+			dispatch('saveJournal', journalData);
+		}
 	}
 
-	function deleteJournal() {
-		console.log('Deleting journal from Journal');
-		dispatch('deleteJournal', journalData);
+	async function deleteJournal() {
+
+		const { data, error } = await supabase.from('journals').delete().eq('id', journalData.id);
+		if (error) {
+			console.log('ERROR DELETING');
+		} else {
+			console.log('Successfully deleted new Journal!', data);
+			dispatch('deleteJournal', journalData);
+		}
 	}
 
 	async function saveEntry() {
@@ -123,6 +145,8 @@
 
 	<!-- Journal -->
 	{#if journalData}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
 			class="journal-frame"
 			on:click={selectJournal}
@@ -177,11 +201,10 @@
 		max-width: 100%;
 		height: 11rem;
 		border-radius: 1rem;
-		/* overflow: hidden; */
-		box-shadow: darkgray 0 0 1rem;
+		box-shadow: black 0 0 1rem;
 		transition: all 0.25s ease-in-out;
 		cursor: pointer;
-		/* background-color: maroon; */
+		/* background-color: teal; */
 	}
 
 	.journal-frame.viewing {

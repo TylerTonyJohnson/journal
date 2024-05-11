@@ -3,85 +3,63 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { onMount } from 'svelte';
 	import { flip } from 'svelte/animate';
-	import { crossfade } from 'svelte/transition';
+	import { crossfade, fade, scale, fly } from 'svelte/transition';
 
 	import { DeskStates, JournalTypes, JournalStates } from '$lib/enums.js';
-	import { currentJournal } from '$lib/stores.js';
+	import {
+		journalDatas,
+		entryDatas,
+		viewingShelf,
+		namingShelf,
+		stylingShelf,
+		editingShelf,
+		creatingShelf,
+		deskState
+	} from '$lib/stores.js';
 	import Journal from './Journals/Journal.svelte';
-	import { scale } from 'svelte/transition';
 
 	// Initialize
-	let journalDatas = [];
-	let entryDatas = [];
 	const [send, receive] = crossfade({});
 
-	let viewingShelf = [];
-	let namingShelf = [];
-	let stylingShelf = [];
-	let editingShelf = [];
+	onMount(async () => {
+		subscribeToJournals();
+		subscribeToEntries();
+		await getJournalData().then(() => {
+			// getEntryData()
+		});
+		$viewingShelf = [...$journalDatas];
+		// console.log($journalDatas);
 
-	let deskState = DeskStates.Viewing;
-
-	$: switch (deskState) {
-		case DeskStates.Viewing:
-			console.log('Viewing');
-			viewingShelf = journalDatas;
-			namingShelf = [];
-			stylingShelf = [];
-			editingShelf = [];
-			break;
-		case DeskStates.Styling:
-			console.log('Styling');
-			viewingShelf = [];
-			namingShelf = [];
-			stylingShelf = Object.values(JournalTypes).map((type) => type.value);
-			editingShelf = [];
-			break;
-		case DeskStates.Naming:
-			console.log('Naming');
-			viewingShelf = [];
-			namingShelf = [1, 2, 3];
-			stylingShelf = [];
-			editingShelf = [];
-			break;
-		case DeskStates.Editing:
-			console.log('Editing');
-			viewingShelf = [];
-			namingShelf = [];
-			stylingShelf = [];
-			editingShelf = [journalDatas[0]];
-			break;
-		default:
-			break;
-	}
-
-	function toggleDesk() {
-		// Switch to next desk state
-		switch (deskState) {
-			case DeskStates.Viewing:
-				deskState = DeskStates.Editing;
-				break;
-			case DeskStates.Styling:
-				deskState = DeskStates.Naming;
-				break;
-			case DeskStates.Naming:
-				deskState = DeskStates.Editing;
-				break;
-			case DeskStates.Editing:
-				deskState = DeskStates.Viewing;
+		switch ($journalDatas.length) {
+			case 0:
+				$deskState = DeskStates.Styling;
 				break;
 			default:
-				deskState = DeskStates.Viewing;
+				$deskState = DeskStates.Viewing;
+				break;
+		}
+
+		$deskState = DeskStates.Viewing;
+	});
+
+	$: {
+		console.log($deskState);
+
+		switch ($deskState) {
+			case DeskStates.Viewing:
+				// $viewingShelf = [...$journalDatas];
+				break;
+			case DeskStates.Styling:
+				// $stylingShelf = [...$journalDatas];
+				break;
+			case DeskStates.Naming:
+				// $namingShelf = [...$journalDatas];
+				break;
+			case DeskStates.Editing:
+				// $editingShelf = [...$journalDatas];
 				break;
 		}
 	}
-
-	onMount(() => {
-		subscribeToJournals();
-		subscribeToEntries();
-		getJournalData();
-		getEntryData();
-	});
 
 	// Methods
 
@@ -99,17 +77,17 @@
 					switch (payload.eventType) {
 						case 'INSERT':
 							console.log('new', payload.new);
-							journalDatas = [...journalDatas, payload.new];
+							$journalDatas = [...$journalDatas, payload.new];
 							break;
 						case 'DELETE':
 							console.log('old', payload.old);
-							journalDatas = journalDatas.filter(
-								(journalData) => journalData.id !== payload.old.id
-							);
+							$journalDatas = [
+								...$journalDatas.filter((journalData) => journalData.id !== payload.old.id)
+							];
 							break;
 						case 'UPDATE':
 							console.log('old', payload.old);
-							journalDatas = [...journalDatas];
+							$journalDatas = [...$journalDatas];
 							break;
 					}
 				}
@@ -148,8 +126,8 @@
 	}
 
 	/* 
-	----- Get Data functions -----
-*/
+		----- Get Data functions -----
+	*/
 
 	async function getJournalData() {
 		// Get Journals
@@ -161,9 +139,9 @@
 				error: 'Could not fetch journals'
 			};
 		} else {
-			console.log(data);
+			// console.log(data);
 		}
-		journalDatas = data ?? [];
+		$journalDatas = data ?? [];
 	}
 
 	async function getEntryData() {
@@ -171,7 +149,7 @@
 		const { data, error } = await supabase
 			.from('entries')
 			.select('*')
-			.in('journal', journalDatas)
+			.in('journal', $journalDatas)
 			.order('date', { ascending: false })
 			.order('created_at', { ascending: false });
 		if (error) {
@@ -190,62 +168,52 @@
 		$username = '';
 	}
 
+	function saveJournal(event) {
+		const journalToSave = event.detail;
+		console.log('saving this journal', journalToSave);
+
+		setShelves($viewingShelf, $journalDatas);
+		$deskState = DeskStates.Viewing;
+	}
+
+	function deleteJournal(event) {
+		const journalToDelete = event.detail;
+
+		console.log('deleting this journal', journalToDelete);
+		setShelves($viewingShelf, $journalDatas);
+	}
+
 	/* 
-		---------- Journal CRUD ----------
+		---------- Input ----------
 	*/
 
-	async function saveJournal(event) {
-		console.log('Saving Journal in Journal.svelte');
-
-		const journalToSave = event.detail;
-		console.log(journalToSave);
-
-		const saveData = { ...journalToSave, username: $username };
-
-		const { data, error } = await supabase.from('journals').insert([saveData]).select();
-		if (error) {
-			console.log('ERROR SAVING');
-		} else {
-			console.log('Successfully saved new Journal!', data);
-		}
-
-		deskState = DeskStates.Viewing;
-	}
-
-	async function deleteJournal(event) {
-		console.log('deleting this journal');
-
-		const journalToDelete = event.detail;
-		console.log(journalToDelete);
-
-		const { data, error } = await supabase.from('journals').delete().eq('id', journalToDelete.id);
-		if (error) {
-			console.log('ERROR DELETING');
-		} else {
-			console.log('Successfully deleted new Journal!', data);
-		}
-	}
-
 	function selectJournal(event) {
-		const selectedData = event.detail;
-		console.log(selectedData);
+		const selectedJournalData = event.detail;
+		console.log(selectedJournalData);
 
-		switch (deskState) {
+		switch ($deskState) {
 			case DeskStates.Viewing:
-				if (selectedData.type === 'new') {
-					$currentJournal = { title: '', type: null };
-					deskState = DeskStates.Styling;
+				if (selectedJournalData.type === 'new') {
+					setShelves(
+						$stylingShelf,
+						Object.values(JournalTypes).map((journalData, index) => {
+							return {
+								id: index,
+								type: journalData.value
+							};
+						})
+					);
+					console.log($stylingShelf);
+					$deskState = DeskStates.Styling;
 				} else {
-					$currentJournal = selectedData;
-					deskState = DeskStates.Editing;
+					setShelves($editingShelf, [selectedJournalData]);
+					console.log($editingShelf);
+					$deskState = DeskStates.Editing;
 				}
 				break;
 			case DeskStates.Styling:
-				deskState = DeskStates.Naming;
-				$currentJournal = {
-					title: '',
-					type: selectedData.type
-				};
+				setShelves($namingShelf, [selectedJournalData]);
+				$deskState = DeskStates.Naming;
 				break;
 			case DeskStates.Naming:
 				break;
@@ -254,222 +222,163 @@
 		}
 	}
 
-	function goBack() {
-		deskState = DeskStates.Viewing;
+	function setShelves(upcomingShelf, upcomingData) {
+		$viewingShelf = upcomingShelf === $viewingShelf ? [...upcomingData] : [];
+		$stylingShelf = upcomingShelf === $stylingShelf ? [...upcomingData] : [];
+		$namingShelf = upcomingShelf === $namingShelf ? [...upcomingData] : [];
+		$editingShelf = upcomingShelf === $editingShelf ? [...upcomingData] : [];
+
+		// $viewingShelf = [...$viewingShelf];
+		// $stylingShelf = [...$stylingShelf];
+		// $namingShelf = [...$namingShelf];
+		// $editingShelf = [...$editingShelf];
 	}
 
-	function swap(item) {
-		if (viewingShelf.includes(item)) {
-			viewingShelf = viewingShelf.filter((i) => i !== item);
-			editingShelf = [...editingShelf, item];
-		} else {
-			editingShelf = editingShelf.filter((i) => i !== item);
-			viewingShelf = [...viewingShelf, item];
-		}
+	function goBack() {
+		setShelves($viewingShelf, $journalDatas);
+		$deskState = DeskStates.Viewing;
 	}
 </script>
 
-<div class="frame">
-	<!-- Banner -->
-	<div class="banner" style="background: url('Wood Texture.png');">
-		<div class="left">
-			{#if deskState !== DeskStates.Viewing}
-				<button on:click={goBack} class="material-symbols-outlined"> arrow_back </button>
-			{/if}
-		</div>
-		<div class="middle">
-			<div class="name">{$username}'s desk</div>
-		</div>
-		<div class="right">
-			{#if $username}
-				<button on:click={logOut} class="material-symbols-outlined"> logout </button>
-			{/if}
-		</div>
-	</div>
-	<!-- <input class="search" type="search" placeholder="search" /> -->
-	<button on:click={toggleDesk}>CLICK ME</button>
-	<!-- Journals (Dynamic) -->
-	<main>
-		<!-- VIEWING -->
-		<div class="shelf viewing">
-			{#each viewingShelf as journalData (journalData.id)}
-				<div
-					class="journal-wrapper"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData.id }}
-					out:send={{ key: journalData.id, duration: 200 }}
-				>
-					<Journal
-						{journalData}
-						journalState={JournalStates.Viewing}
-						entryDatas={entryDatas.filter((entry) => entry.journal === journalData.id)}
-					/>
-				</div>
-			{/each}
-		</div>
-
-		<div class="shelf styling">
-			{#each stylingShelf as journalData (journalData)}
-				<div
-					class="journal-wrapper"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData.id }}
-					out:send={{ key: journalData.id, duration: 0 }}
-				>
-					<Journal {journalData} journalState={JournalStates.Styling} />
-				</div>
-			{/each}
-		</div>
-		<div class="shelf editing">
-			{#each namingShelf as journalData (journalData)}
-				<div
-					class="journal-wrapper"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData.id }}
-					out:send={{ key: journalData.id, duration: 0 }}
-				>
-					<Journal {journalData} journalState={JournalStates.Naming} />
-				</div>
-			{/each}
-		</div>
-		<div class="shelf editing">
-			{#each editingShelf as journalData (journalData.id)}
-				<div
-					class="journal-wrapper"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData.id, duration: 200}}
-					out:send={{ key: journalData.id, duration: 0 }}
-				>
-					<Journal
-						{journalData}
-						journalState={JournalStates.Editing}
-						entryDatas={entryDatas.filter((entry) => entry.journal === $currentJournal.id)}
-					/>
-				</div>
-			{/each}
-		</div>
-	</main>
-
-	<!-- <div class="journal-container">
-		{#if deskState === DeskStates.Viewing}
-			{#each journalDatas as journalData (journalData)}
-				<div
-					class="animate"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData }}
-					out:send={{ key: journalData }}
-				>
-					<Journal
-						{journalData}
-						journalState={JournalStates.Viewing}
-						entryDatas={entryDatas.filter((entry) => entry.journal === journalData.id)}
-						on:selectJournal={selectJournal}
-						on:deleteJournal={deleteJournal}
-					/>
-				</div>
-			{/each}
-
-			<Journal
-				journalData={{ type: 'new' }}
-				journalState={JournalStates.Viewing}
-				{entryDatas}
-				on:selectJournal={selectJournal}
-			/>
-		{:else if deskState === DeskStates.Styling}
-			{#each Object.values(JournalTypes) as journalData}
+<div
+	class="frame"
+	in:fly={{ y: '50%', delay: 500, duration: 500 }}
+	out:fly={{ y: '50%', duration: 500 }}
+	class:tl={$deskState === DeskStates.Viewing}
+	class:tr={$deskState === DeskStates.Creating}
+	class:bl={$deskState === DeskStates.Editing}
+	class:br={$deskState === DeskStates.Styling}
+>
+	<!-- VIEWING -->
+	<div class="shelf viewing">
+		{#each $journalDatas as journalData (journalData.id)}
+			<div
+				class="journal-wrapper"
+				animate:flip={{ duration: 200 }}
+				in:receive={{ key: journalData.id, duration: 200 }}
+				out:send={{ key: journalData.id, duration: 0 }}
+			>
 				<Journal
-					journalData={{ type: journalData.value, title: journalData.value }}
+					{journalData}
+					journalState={JournalStates.Viewing}
+					on:selectJournal={selectJournal}
+					on:deleteJournal={deleteJournal}
+				/>
+			</div>
+		{/each}
+	</div>
+
+	<div class="shelf creating">
+		<Journal
+			journalState={JournalStates.Viewing}
+			journalData={{ type: 'new', id: 'new' }}
+			on:selectJournal={selectJournal}
+		/>
+	</div>
+
+	<!-- STYLING -->
+	<div class="shelf styling">
+		{#each Object.values(JournalTypes).map((journalType, index) => {
+			return { id: index, type: journalType.value };
+		}) as journalData (journalData.id)}
+			<div
+				class="journal-wrapper"
+				animate:flip={{ duration: 200 }}
+				in:scale={{ duration: 200 }}
+				out:send={{ key: journalData.id, duration: 0 }}
+			>
+				<Journal
+					{journalData}
 					journalState={JournalStates.Styling}
-					{entryDatas}
 					on:selectJournal={selectJournal}
 				/>
-			{/each}
-		{:else if deskState === DeskStates.Naming}
-			<Journal
-				journalData={$currentJournal}
-				journalState={JournalStates.Naming}
-				{entryDatas}
-				on:saveJournal={saveJournal}
-			/>
-		{:else if deskState === DeskStates.Editing}
-			{#each journalDatas.filter((journal) => journal.id === $currentJournal.id) as journalData (journalData)}
-				<div
-					class="animate"
-					animate:flip={{ duration: 200 }}
-					in:receive={{ key: journalData }}
-					out:send={{ key: journalData }}
-				>
-					<Journal
-						{journalData}
-						journalState={JournalStates.Editing}
-						entryDatas={entryDatas.filter((entry) => entry.journal === $currentJournal.id)}
-					/>
-				</div>
-			{/each}
-		{/if}
-	</div> -->
+			</div>
+		{/each}
+	</div>
+
+	<!-- NAMING -->
+	<div class="shelf naming">
+		{#each $namingShelf as journalData (journalData.id)}
+			<div
+				class="journal-wrapper"
+				animate:flip={{ duration: 200 }}
+				in:receive={{ key: journalData.id, duration: 200 }}
+				out:send={{ key: journalData.id, duration: 0 }}
+			>
+				<Journal {journalData} journalState={JournalStates.Naming} on:saveJournal={saveJournal} />
+			</div>
+		{/each}
+	</div>
+
+	<!-- EDITING -->
+	<div class="shelf editing">
+		{#each $journalDatas as journalData (journalData.id)}
+			<div
+				class="journal-wrapper"
+				animate:flip={{ duration: 200 }}
+				in:receive={{ key: journalData.id, duration: 200 }}
+				out:send={{ key: journalData.id, duration: 0 }}
+			>
+				<Journal {journalData} journalState={JournalStates.Editing} />
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style>
 	.frame {
-		/* position: relative; */
-		min-height: 100vh;
-		max-width: 100vw;
-		display: flex;
-		flex-direction: column;
-		background-color: lavender;
+		position: absolute;
+		min-height: calc(100vh - 8rem);
+		width: 100%;
+		top: 8rem;
+
+		display: grid;
+		/* grid-template-columns: 1fr auto;
+		grid-template-rows: 3fr 1fr; */
+		grid-template-areas:
+			'viewing creating'
+			'editing styling';
+
+		transition: all 0.5s ease-in-out;
+
 		border: solid 2px yellow;
+		/* overflow: hidden; */
+	}
+
+	.tl {
+		grid-template-columns: 10vw 90vw;
+		grid-template-rows: calc(90vh - 8rem) 10vh;
+	}
+
+	.tr {
+		grid-template-columns: 90vw 10vw;
+		grid-template-rows: calc(90vh - 8rem) 10vh;
+	}
+
+	.bl {
+		grid-template-columns: 10vw 90vw;
+		grid-template-rows: 10vh calc(90vh - 8rem);
+	}
+
+	.br {
+		grid-template-columns: 90vw 10vw;
+		grid-template-rows: 10vh calc(90vh - 8rem);
 	}
 
 	.journal-wrapper {
 		/* padding: 1rem;
 		margin: 0.5rem; */
 		/* background-color: aqua; */
-		border: solid purple 1px;
+		/* border: solid purple 1px; */
 		/* background-image: url('Composition Texture.png'); */
 	}
-
-	.banner {
-		/* position: fixed; */
-		/* width: 100%; */
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		justify-content: center;
-		align-items: center;
-		/* gap: 1rem; */
-		padding: 2rem;
-		/* background-color: red; */
-	}
-	.banner .left {
-		display: flex;
-		justify-content: start;
-		/* border: solid blue 1px; */
-	}
-	.banner .right {
-		display: flex;
-		justify-content: end;
-		/* border: solid green 1px; */
-	}
-	.banner .middle {
-		/* border: solid yellow 1px; */
-	}
-
-	.search {
-		width: 20rem;
-		margin: 1rem auto;
-	}
-
-	.name {
-		color: white;
-		font-size: 2rem;
-	}
-
 	.shelf {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 3rem;
+		overflow: hidden;
 		/* border: solid green 2px; */
 
 		/* transition: all 1s ease-out; */
@@ -477,10 +386,22 @@
 	}
 
 	.viewing {
-		/* background-color: red; */
+		background-color: red;
+		grid-area: viewing;
+	}
+
+	.creating {
+		background-color: blue;
+		grid-area: creating;
 	}
 
 	.editing {
-		/* background-color: blue; */
+		background-color: green;
+		grid-area: editing;
+	}
+
+	.styling {
+		background-color: yellow;
+		grid-area: styling;
 	}
 </style>

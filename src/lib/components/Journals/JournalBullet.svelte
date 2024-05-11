@@ -15,12 +15,12 @@
 	export let currentPage;
 
 	$: currentEntry = entryDatas[currentPage];
-	$: console.log('entries', entryDatas);
+	// $: console.log('entries', entryDatas);
 
 	const dispatch = createEventDispatcher();
 
 	function submitName() {
-		dispatch('submitName');
+		dispatch('submitName', journalData);
 	}
 </script>
 
@@ -56,7 +56,7 @@
 							<input
 								class="journal-title"
 								type="text"
-								bind:value={$currentJournal.title}
+								bind:value={journalData.title}
 								placeholder="Choose a name"
 							/>
 						</form>
@@ -64,7 +64,7 @@
 						<div class="title">{journalData.title}</div>
 					{/if}
 				</div>
-				{#if journalState === JournalStates.Naming && $currentJournal.title}
+				{#if journalState === JournalStates.Naming && journalData.title}
 					<button class="button" type="submit" on:click={submitName}>SUBMIT</button>
 				{/if}
 			</div>
